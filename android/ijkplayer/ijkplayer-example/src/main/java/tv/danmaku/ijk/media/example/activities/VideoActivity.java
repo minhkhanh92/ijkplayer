@@ -72,6 +72,10 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
     }
 
     public static void intentTo(Context context, String videoPath, String videoTitle) {
+        //videoPath = "rtsp://staging-stream.veriksystems.com:443/live-test/test";
+        //videoPath = "rtsp://stream.veriksystems.com:443/live/19d213511b0e48b49e1c1ce0b8cfc8e6?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=3lGIAvllVJwVCCWNoN7mQBHvqO1XWa1LE33btWEDBF8fYxALe8s0QaG7it7Bj16P&hubUUID=db7c1028655f40309e8559087477b4dc";
+        videoPath = "rtsp://stream.veriksystems.com:443/live/19d213511b0e48b49e1c1ce0b8cfc8e6?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=vHUNMR3cjf0wa7D1AAo0MwQYpUZf0yw6Qdtv0YIv8UGCRHkYtrVQIwlkuKIZGBVi&hubUUID=db7c1028655f40309e8559087477b4dc";
+        //videoPath = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov";
         context.startActivity(newIntent(context, videoPath, videoTitle));
     }
 
@@ -83,7 +87,8 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
         mSettings = new Settings(this);
 
         // handle arguments
-        mVideoPath = getIntent().getStringExtra("videoPath");
+        mVideoPath = "rtsp://stream.veriksystems.com:1935/live/c3f34db4d3bc47ca949087cfbe3de4b5?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=vHUNMR3cjf0wa7D1AAo0MwQYpUZf0yw6Qdtv0YIv8UGCRHkYtrVQIwlkuKIZGBVi&hubUUID=db7c1028655f40309e8559087477b4dc";
+        //mVideoPath = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov";
 
         Intent intent = getIntent();
         String intentAction = intent.getAction();
