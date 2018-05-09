@@ -1323,6 +1323,10 @@ static void video_refresh(FFPlayer *opaque, double *remaining_time)
         *remaining_time = FFMIN(*remaining_time, is->last_vis_time + ffp->rdftspeed - time);
     }
 
+    if (ffp->pf_playback_rate > ADJUST_POLLING_RATE_THRESHOLD && !is->audio_st) {
+        *remaining_time = VIDEO_ONLY_FAST_POLLING_RATE;
+    }
+
     if (is->video_st) {
 retry:
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
@@ -1354,10 +1358,16 @@ retry:
             if (isnan(is->frame_timer) || time < is->frame_timer)
                 is->frame_timer = time;
             if (time < is->frame_timer + delay) {
-                *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
-                goto display;
+                if (ffp->max_cache_duration_to_increase_speed
+                    && ffp->stat.video_cache.duration > ffp->max_cache_duration_to_increase_speed) {
+                    // force display to burn cached frames
+                    av_log(NULL, AV_LOG_INFO, "video_refresh force display");
+                    *remaining_time = 0;
+                } else {
+                    *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+                    goto display;
+                }
             }
-
             is->frame_timer += delay;
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX)
                 is->frame_timer = time;
@@ -3365,6 +3375,27 @@ static int read_thread(void *arg)
             continue;
         }
 #endif
+
+        if (ffp->max_cache_duration_to_skip_frames
+            && ffp->stat.video_cache.duration > ffp->max_cache_duration_to_skip_frames) {
+            if (is->audio_stream >= 0) {
+                packet_queue_flush(&is->audioq);
+                packet_queue_put(&is->audioq, &flush_pkt);
+            }
+            if (is->subtitle_stream >= 0) {
+                packet_queue_flush(&is->subtitleq);
+                packet_queue_put(&is->subtitleq, &flush_pkt);
+            }
+            if (is->video_stream >= 0) {
+                if (ffp->node_vdec) {
+                    ffpipenode_flush(ffp->node_vdec);
+                }
+                packet_queue_flush(&is->videoq);
+                packet_queue_put(&is->videoq, &flush_pkt);
+            }
+            av_log(NULL, AV_LOG_INFO, "read_thread flush packet queues");
+        }
+
         if (is->seek_req) {
             int64_t seek_target = is->seek_pos;
             int64_t seek_min    = is->seek_rel > 0 ? seek_target - is->seek_rel + 2: INT64_MIN;
@@ -4168,6 +4199,20 @@ void ffp_set_option_int(FFPlayer *ffp, int opt_category, const char *name, int64
     if (!ffp)
         return;
 
+    if (opt_category == FFP_OPT_CATEGORY_PLAYER) {
+        if (!strcmp(name, FFP_PROP_STRING_MAX_CACHE_DURATION_TO_INCREASE_SPEED)) {
+            ffp->max_cache_duration_to_increase_speed = (int) value;
+            av_log(ffp, AV_LOG_INFO, "FFP_PROP_STRING_MAX_CACHE_DURATION_TO_INCREASE_SPEED, %lld", value);
+            return;
+        }
+
+        if (!strcmp(name, FFP_PROP_STRING_MAX_CACHE_DURATION_TO_SKIP_FRAMES)) {
+            ffp->max_cache_duration_to_skip_frames = (int) value;
+            av_log(ffp, AV_LOG_INFO, "FFP_PROP_STRING_MAX_CACHE_DURATION_TO_SKIP_FRAMES, %lld", value);
+            return;
+        }
+    }
+
     AVDictionary **dict = ffp_get_opt_dict(ffp, opt_category);
     av_dict_set_int(dict, name, value, 0);
 }
@@ -4786,6 +4831,14 @@ void ffp_set_playback_rate(FFPlayer *ffp, float rate)
     av_log(ffp, AV_LOG_INFO, "Playback rate: %f\n", rate);
     ffp->pf_playback_rate = rate;
     ffp->pf_playback_rate_changed = 1;
+
+    if (ffp->is && ffp->is->audio_stream < 0) {
+        // if non audio track be selectd, default sync clock is external clock.
+        // BTW: if choose video master sync type, non clock sync, video freerun.
+        // ergo, setclockspeed is noneffective for this situation.
+        av_log(ffp, AV_LOG_INFO, "didn't select an audio track, setclock speed instead");
+        set_clock_speed(&ffp->is->extclk, (double)rate);
+    }
 }
 
 void ffp_set_playback_volume(FFPlayer *ffp, float volume)

@@ -106,4 +106,7 @@
 #define FFP_PROP_INT64_SHARE_CACHE_DATA                 20210
 #define FFP_PROP_INT64_IMMEDIATE_RECONNECT              20211
 
+#define FFP_PROP_STRING_MAX_CACHE_DURATION_TO_INCREASE_SPEED   "max-cache-duration-to-increase-speed"
+#define FFP_PROP_STRING_MAX_CACHE_DURATION_TO_SKIP_FRAMES      "max-cache-duration-to-skip-frames"
+
 #endif
