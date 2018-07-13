@@ -34,10 +34,14 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.QuickContactBadge;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
+import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import tv.danmaku.ijk.media.player.misc.ITrackInfo;
 import tv.danmaku.ijk.media.example.R;
@@ -64,6 +68,9 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
     private Settings mSettings;
     private boolean mBackPressed;
 
+    private Button btnRecord;
+    private boolean isRecording;
+
     public static Intent newIntent(Context context, String videoPath, String videoTitle) {
         Intent intent = new Intent(context, VideoActivity.class);
         intent.putExtra("videoPath", videoPath);
@@ -87,8 +94,8 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
         mSettings = new Settings(this);
 
         // handle arguments
-        mVideoPath = "rtsp://stream.veriksystems.com:1935/live/c3f34db4d3bc47ca949087cfbe3de4b5?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=vHUNMR3cjf0wa7D1AAo0MwQYpUZf0yw6Qdtv0YIv8UGCRHkYtrVQIwlkuKIZGBVi&hubUUID=db7c1028655f40309e8559087477b4dc";
-        //mVideoPath = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov";
+        //mVideoPath = "rtsp://stream.veriksystems.com:1935/live/c3f34db4d3bc47ca949087cfbe3de4b5?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=vHUNMR3cjf0wa7D1AAo0MwQYpUZf0yw6Qdtv0YIv8UGCRHkYtrVQIwlkuKIZGBVi&hubUUID=db7c1028655f40309e8559087477b4dc";
+        mVideoPath = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov";
 
         Intent intent = getIntent();
         String intentAction = intent.getAction();
@@ -156,6 +163,48 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
             return;
         }
         mVideoView.start();
+
+        mVideoView.setOnInfoListener(new IMediaPlayer.OnInfoListener() {
+            @Override
+            public boolean onInfo(IMediaPlayer mp, int what, int extra) {
+                //Log.i("AAA", mVideoView.startRecord(getExternalCacheDir().getPath()) + "");
+                return false;
+            }
+        });
+
+        btnRecord = (Button) findViewById(R.id.btnRecord);
+        btnRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (isRecording) {
+                    mVideoView.stopRecord();
+                } else {
+                    String path  = getExternalFilesDir(null).getAbsolutePath() +
+                            String.format("/video_%s.mp4", System.currentTimeMillis());
+                    isRecording = mVideoView.startRecord(path);
+                    Log.i("record", "start record ok = " + isRecording);
+                }
+            }
+        });
+
+        mVideoView.setOnRecordListener(new IMediaPlayer.OnRecordListener() {
+            @Override
+            public boolean onRecord(IMediaPlayer mp, int what, int extra) {
+                switch (what) {
+                    case IMediaPlayer.MEDIA_RECORD_STARTED:
+                        btnRecord.setText("Stop");
+                        isRecording = true;
+                        break;
+                    case IMediaPlayer.MEDIA_RECORD_STOPPED:
+                    case IMediaPlayer.MEDIA_RECORD_ERROR:
+                        btnRecord.setText("Start");
+                        isRecording = false;
+                        break;
+                }
+                Log.i("record", "onRecord: " + what);
+                return false;
+            }
+        });
     }
 
     @Override

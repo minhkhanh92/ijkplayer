@@ -68,6 +68,10 @@ public interface IMediaPlayer {
     int MEDIA_ERROR_UNSUPPORTED = -1010;
     int MEDIA_ERROR_TIMED_OUT = -110;
 
+    int MEDIA_RECORD_STARTED    = 1;
+    int MEDIA_RECORD_STOPPED    = 2;
+    int MEDIA_RECORD_ERROR      = 3;
+
     void setDisplay(SurfaceHolder sh);
 
     void setDataSource(Context context, Uri uri)
@@ -177,6 +181,10 @@ public interface IMediaPlayer {
 
     interface OnTimedTextListener {
         void onTimedText(IMediaPlayer mp, IjkTimedText text);
+    }
+
+    interface OnRecordListener {
+        boolean onRecord(IMediaPlayer mp, int what, int extra);
     }
 
     /*--------------------

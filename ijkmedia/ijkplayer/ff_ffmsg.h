@@ -53,6 +53,10 @@
 #define FFP_MSG_ACCURATE_SEEK_COMPLETE      900     /* arg1 = current position*/
 #define FFP_MSG_GET_IMG_STATE               1000    /* arg1 = timestamp, arg2 = result code, obj = file name*/
 
+#define FFP_MSG_RECORD_START                1100
+#define FFP_MSG_RECORD_STOP                 1101
+#define FFP_MSG_RECORD_ERROR                1102
+
 #define FFP_MSG_VIDEO_DECODER_OPEN          10001
 
 #define FFP_REQ_START                       20001

@@ -77,6 +77,7 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
     private static final int MEDIA_TIMED_TEXT = 99;
     private static final int MEDIA_ERROR = 100;
     private static final int MEDIA_INFO = 200;
+    private static final int MEDIA_RECORD = 999;
 
     protected static final int MEDIA_SET_VIDEO_SAR = 10001;
 
@@ -540,6 +541,19 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
     }
 
     private native void _pause() throws IllegalStateException;
+
+    public boolean startRecord(String path) throws IllegalArgumentException, IllegalStateException {
+        return _startRecord(path);
+    }
+
+    private native boolean _startRecord(String path) throws IllegalArgumentException, IllegalStateException;
+
+
+    public boolean stopRecord() throws IllegalStateException {
+        return _stopRecord();
+    }
+
+    private native boolean _stopRecord() throws IllegalStateException;
 
     @SuppressLint("Wakelock")
     @Override
@@ -1032,6 +1046,11 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
                 player.notifyOnInfo(msg.arg1, msg.arg2);
                 // No real default action so far.
                 return;
+
+            case MEDIA_RECORD:
+                player.notifyOnRecord(msg.arg1, msg.arg2);
+                return;
+
             case MEDIA_TIMED_TEXT:
                 if (msg.obj == null) {
                     player.notifyOnTimedText(null);
