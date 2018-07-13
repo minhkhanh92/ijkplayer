@@ -100,6 +100,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
     private int mCurrentBufferPercentage;
     private IMediaPlayer.OnErrorListener mOnErrorListener;
     private IMediaPlayer.OnInfoListener mOnInfoListener;
+    private IMediaPlayer.OnRecordListener mOnRecordListener;
     private int mSeekWhenPrepared;  // recording the seek position while preparing
     private boolean mCanPause = true;
     private boolean mCanSeekBack = true;
@@ -331,6 +332,9 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
             mMediaPlayer.setOnBufferingUpdateListener(mBufferingUpdateListener);
             mMediaPlayer.setOnSeekCompleteListener(mSeekCompleteListener);
             mMediaPlayer.setOnTimedTextListener(mOnTimedTextListener);
+            if (mMediaPlayer instanceof IjkMediaPlayer) {
+                ((IjkMediaPlayer) mMediaPlayer).setOnRecordListener(mOnRecordListener);
+            }
             mCurrentBufferPercentage = 0;
             String scheme = mUri.getScheme();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
@@ -646,6 +650,10 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
      */
     public void setOnInfoListener(IMediaPlayer.OnInfoListener l) {
         mOnInfoListener = l;
+    }
+
+    public void setOnRecordListener(IMediaPlayer.OnRecordListener l) {
+        mOnRecordListener = l;
     }
 
     // REMOVED: mSHCallback
@@ -1236,5 +1244,19 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
     public int getSelectedTrack(int trackType) {
         return MediaPlayerCompat.getSelectedTrack(mMediaPlayer, trackType);
+    }
+
+    public boolean startRecord(String path) {
+        if (mMediaPlayer != null && mMediaPlayer instanceof IjkMediaPlayer) {
+            return ((IjkMediaPlayer) mMediaPlayer).startRecord(path);
+        }
+        return false;
+    }
+
+    public boolean stopRecord() {
+        if (mMediaPlayer != null && mMediaPlayer instanceof IjkMediaPlayer) {
+            return ((IjkMediaPlayer) mMediaPlayer).stopRecord();
+        }
+        return false;
     }
 }

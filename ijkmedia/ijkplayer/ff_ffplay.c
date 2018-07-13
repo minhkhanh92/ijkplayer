@@ -3067,6 +3067,92 @@ static int is_realtime(AVFormatContext *s)
     return 0;
 }
 
+static int init_record(VideoState *is) {
+    AVOutputFormat *ofmt = NULL;
+    AVFormatContext *ifmt_ctx = is->ic, *ofmt_ctx = NULL;
+    int ret, i;
+
+    av_log(NULL, AV_LOG_INFO, "init record");
+
+    avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, is->record_filename);
+    if (!ofmt_ctx) {
+        av_log(NULL, AV_LOG_ERROR, "Could not create output context %s\n", is->record_filename);
+        ret = AVERROR_UNKNOWN;
+        goto end;
+    }
+
+    ofmt = ofmt_ctx->oformat;
+
+    for (i = 0; i < ifmt_ctx->nb_streams; i++) {
+        AVStream *in_stream = ifmt_ctx->streams[i];
+        AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
+        if (!out_stream) {
+            av_log(NULL, AV_LOG_ERROR, "Failed allocating output stream\n");
+            ret = AVERROR_UNKNOWN;
+            goto end;
+        }
+
+        ret = avcodec_copy_context(out_stream->codec, in_stream->codec);
+        if (ret < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Failed to copy context from input to output stream codec context\n");
+            goto end;
+        }
+        out_stream->codec->codec_tag = 0;
+        if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
+            out_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    }
+    av_dump_format(ofmt_ctx, 0, is->record_filename, 1);
+
+    if (!(ofmt->flags & AVFMT_NOFILE)) {
+        ret = avio_open(&ofmt_ctx->pb, is->record_filename, AVIO_FLAG_WRITE);
+        if (ret < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Could not open output file '%s'\n", is->record_filename);
+            goto end;
+        }
+    }
+
+    ret = avformat_write_header(ofmt_ctx, NULL);
+    if (ret < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Error occurred when opening output file\n");
+        goto end;
+    }
+
+end:
+    if (ret < 0 && ret != AVERROR_EOF) {
+        /* close output */
+        if (ofmt_ctx && !(ofmt->flags & AVFMT_NOFILE))
+            avio_closep(&ofmt_ctx->pb);
+        avformat_free_context(ofmt_ctx);
+
+        av_log(NULL, AV_LOG_ERROR, "Error occurred: %s\n", av_err2str(ret));
+        return -1;
+    }
+    is->oc = ofmt_ctx;
+
+    return 1;
+}
+
+static int record_stream(VideoState *is, AVPacket *pkt) {
+    AVPacket *copyPkt = av_packet_clone(pkt);
+
+    AVStream *in_stream, *out_stream;
+    in_stream  = is->ic->streams[pkt->stream_index];
+    out_stream = is->oc->streams[pkt->stream_index];
+
+    /* copy packet */
+    copyPkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+    copyPkt->dts = av_rescale_q_rnd(pkt->dts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+    copyPkt->duration = av_rescale_q(pkt->duration, in_stream->time_base, out_stream->time_base);
+    copyPkt->pos = -1;
+
+    int ret = av_interleaved_write_frame(is->oc, copyPkt);
+    av_packet_free(&copyPkt);
+
+    av_log(NULL, AV_LOG_WARNING, "write packet ok = %d\n", ret);
+
+    return ret;
+}
+
 /* this thread gets the stream from the disk or the network */
 static int read_thread(void *arg)
 {
@@ -3595,6 +3681,44 @@ static int read_thread(void *arg)
             continue;
         } else {
             is->eof = 0;
+
+            if (is->recording) {
+                if (is->stop_record_req) {
+                    is->recording = 0;
+                    is->stop_record_req = 0;
+
+                    if (is->oc) {
+                        av_write_trailer(is->oc);
+                        // close output
+                        if (is->oc->oformat->flags & AVFMT_NOFILE)
+                            avio_closep(&is->oc->pb);
+                        avformat_free_context(is->oc);
+                        is->oc = NULL;
+
+                        av_log(NULL, AV_LOG_INFO, "record stop");
+                        ffp_notify_msg1(ffp, FFP_MSG_RECORD_STOP);
+                    } else {
+                        av_log(NULL, AV_LOG_ERROR, "record stop with unexpected state");
+                        ffp_notify_msg2(ffp, FFP_MSG_RECORD_ERROR, -2);
+                    }
+                } else {
+                    if (!is->oc) {
+                        // need to init output context
+                        ret = init_record(is);
+                        if (ret > 0) {
+                            av_log(NULL, AV_LOG_INFO, "record start");
+                            ffp_notify_msg1(ffp, FFP_MSG_RECORD_START);
+                        } else {
+                            av_log(NULL, AV_LOG_ERROR, "record init output context fail");
+                            ffp_notify_msg2(ffp, FFP_MSG_RECORD_ERROR, -1);
+                        }
+                    }
+
+                    if (ret >= 0) {
+                        record_stream(is, pkt);
+                    }
+                }
+            }
         }
 
         if (pkt->flags & AV_PKT_FLAG_DISCONTINUITY) {
@@ -3662,6 +3786,23 @@ static int read_thread(void *arg)
         ffp->last_error = last_error;
         ffp_notify_msg2(ffp, FFP_MSG_ERROR, last_error);
     }
+
+    if (is && is->oc) {
+        if (is->recording) {
+            av_write_trailer(is->oc);
+            is->recording = 0;
+
+            av_log(NULL, AV_LOG_INFO, "record stop");
+            ffp_notify_msg1(ffp, FFP_MSG_RECORD_STOP);
+        }
+        // close output
+        if (is->oc->oformat->flags & AVFMT_NOFILE) {
+            avio_closep(&is->oc->pb);
+        }
+        avformat_free_context(is->oc);
+        is->oc = NULL;
+    }
+
     SDL_DestroyMutex(wait_mutex);
     return 0;
 }
@@ -5089,4 +5230,24 @@ IjkMediaMeta *ffp_get_meta_l(FFPlayer *ffp)
         return NULL;
 
     return ffp->meta;
+}
+
+int ffp_start_record(FFPlayer *ffp, const char *out_filename) {
+    if (!ffp || !ffp->is)
+        return 0;
+
+    ffp->is->record_filename = av_strdup(out_filename);
+    ffp->is->recording = 1;
+    ffp->is->stop_record_req = 0;
+
+    return 1;
+}
+
+int ffp_stop_record(FFPlayer *ffp) {
+    if (!ffp || !ffp->is)
+        return 0;
+
+    ffp->is->stop_record_req = 1;
+
+    return 1;
 }

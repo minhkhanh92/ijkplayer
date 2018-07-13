@@ -40,6 +40,7 @@ enum media_event_type {
     MEDIA_TIMED_TEXT        = 99,       // not supported yet
     MEDIA_ERROR             = 100,      // arg1, arg2
     MEDIA_INFO              = 200,      // arg1, arg2
+    MEDIA_RECORD            = 999,      // arg1, arg2
 
 
     MEDIA_SET_VIDEO_SAR     = 10001,    // arg1 = sar.num, arg2 = sar.den
@@ -143,6 +144,12 @@ enum media_info_type {
     MEDIA_INFO_AUDIO_SEEK_RENDERING_START = 10009,
 
     MEDIA_INFO_MEDIA_ACCURATE_SEEK_COMPLETE = 10100,
+};
+
+enum media_record_type {
+    MEDIA_RECORD_STARTED    = 1,
+    MEDIA_RECORD_STOPPED    = 2,
+    MEDIA_RECORD_ERROR      = 3,
 };
 
 typedef struct ijkmp_mediacodecinfo_context

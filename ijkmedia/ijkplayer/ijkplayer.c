@@ -796,3 +796,48 @@ int ijkmp_get_msg(IjkMediaPlayer *mp, AVMessage *msg, int block)
 
     return -1;
 }
+
+static int ikjmp_chkst_start_record_l(int mp_state)
+{
+    MPST_RET_IF_EQ(mp_state, MP_STATE_IDLE);
+    MPST_RET_IF_EQ(mp_state, MP_STATE_INITIALIZED);
+    MPST_RET_IF_EQ(mp_state, MP_STATE_ASYNC_PREPARING);
+    // MPST_RET_IF_EQ(mp_state, MP_STATE_PREPARED);
+    // MPST_RET_IF_EQ(mp_state, MP_STATE_STARTED);
+    // MPST_RET_IF_EQ(mp_state, MP_STATE_PAUSED);
+    // MPST_RET_IF_EQ(mp_state, MP_STATE_COMPLETED);
+    MPST_RET_IF_EQ(mp_state, MP_STATE_STOPPED);
+    MPST_RET_IF_EQ(mp_state, MP_STATE_ERROR);
+    MPST_RET_IF_EQ(mp_state, MP_STATE_END);
+
+    return 0;
+}
+
+static int ijkmp_start_record_l(IjkMediaPlayer *mp, const char *file_name)
+{
+    assert(mp);
+
+    MP_RET_IF_FAILED(ikjmp_chkst_start_record_l(mp->mp_state));
+
+    return ffp_start_record(mp->ffplayer, file_name);
+}
+
+int ijkmp_start_record(IjkMediaPlayer *mp, const char *file_name) {
+    assert(mp);
+    MPTRACE("ijkmp_start_record()\n");
+    pthread_mutex_lock(&mp->mutex);
+    int retval = ijkmp_start_record_l(mp, file_name);
+    pthread_mutex_unlock(&mp->mutex);
+    MPTRACE("ijkmp_start_record()=%d\n", retval);
+    return retval;
+}
+
+int ijkmp_stop_record(IjkMediaPlayer *mp) {
+    assert(mp);
+    MPTRACE("ijkmp_stop_record()\n");
+    pthread_mutex_lock(&mp->mutex);
+    int retval = ffp_stop_record(mp->ffplayer);
+    pthread_mutex_unlock(&mp->mutex);
+    MPTRACE("ijkmp_stop_record()=%d\n", retval);
+    return retval;
+}

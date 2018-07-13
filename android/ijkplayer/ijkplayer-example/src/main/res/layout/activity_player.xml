@@ -46,6 +46,12 @@
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             tools:context=".toolbar_widget" />
+
+        <Button
+            android:id="@+id/btnRecord"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Record"/>
     </FrameLayout>
 
     <!-- The navigation drawer -->

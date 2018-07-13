@@ -423,6 +423,12 @@ typedef struct VideoState {
     SDL_cond  *audio_accurate_seek_cond;
     volatile int initialized_decoder;
     int seek_buffering;
+
+    // for recording
+    int recording;
+    int stop_record_req;
+    char *record_filename;
+    AVFormatContext *oc;
 } VideoState;
 
 /* options specified by the user */

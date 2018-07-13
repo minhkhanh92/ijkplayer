@@ -1019,7 +1019,19 @@ static void message_loop_n(JNIEnv *env, IjkMediaPlayer *mp)
             MPTRACE("FFP_MSG_AUDIO_SEEK_RENDERING_START:\n");
             post_event(env, weak_thiz, MEDIA_INFO, MEDIA_INFO_AUDIO_SEEK_RENDERING_START, msg.arg1);
             break;
-        default:
+        case FFP_MSG_RECORD_START:
+            MPTRACE("FFP_MSG_RECORD_START:\n");
+            post_event(env, weak_thiz, MEDIA_RECORD, MEDIA_RECORD_STARTED, 0);
+            break;
+        case FFP_MSG_RECORD_STOP:
+            MPTRACE("FFP_MSG_RECORD_STOP:\n");
+            post_event(env, weak_thiz, MEDIA_RECORD, MEDIA_RECORD_STOPPED, 0);
+            break;
+        case FFP_MSG_RECORD_ERROR:
+            MPTRACE("FFP_MSG_RECORD_ERROR:\n");
+            post_event(env, weak_thiz, MEDIA_RECORD, MEDIA_RECORD_ERROR, msg.arg1);
+            break;
+            default:
             ALOGE("unknown FFP_MSG_xxx(%d)\n", msg.what);
             break;
         }
@@ -1127,8 +1139,35 @@ LABEL_RETURN:
     return;
 }
 
+static jboolean
+IjkMediaPlayer_startRecord(JNIEnv *env, jobject thiz, jstring path) {
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+    const char *c_path = NULL;
+    JNI_CHECK_GOTO(path, env, "java/lang/IllegalArgumentException", "mpjni: startRecord: null path", LABEL_RETURN);
+    JNI_CHECK_GOTO(mp, env, "java/lang/IllegalStateException", "mpjni: startRecord: null mp", LABEL_RETURN);
 
+    c_path = (*env)->GetStringUTFChars(env, path, NULL );
+    JNI_CHECK_GOTO(c_path, env, "java/lang/OutOfMemoryError", "mpjni: startRecord: path.string oom", LABEL_RETURN);
 
+    int success = ijkmp_start_record(mp, c_path);
+    (*env)->ReleaseStringUTFChars(env, path, c_path);
+
+    LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    return success > 0 ? true : false;
+}
+
+static jboolean
+IjkMediaPlayer_stopRecord(JNIEnv *env, jobject thiz) {
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+    JNI_CHECK_GOTO(mp, env, "java/lang/IllegalStateException", "mpjni: stopRecord: null mp", LABEL_RETURN);
+
+    int success = ijkmp_stop_record(mp);
+
+    LABEL_RETURN:
+    ijkmp_dec_ref_p(&mp);
+    return success > 0 ? true : false;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -1180,6 +1219,10 @@ static JNINativeMethod g_methods[] = {
 
     { "native_setLogLevel",     "(I)V",                     (void *) IjkMediaPlayer_native_setLogLevel },
     { "_setFrameAtTime",        "(Ljava/lang/String;JJII)V", (void *) IjkMediaPlayer_setFrameAtTime },
+
+    { "_startRecord",           "(Ljava/lang/String;)Z",    (void *) IjkMediaPlayer_startRecord },
+    { "_stopRecord",            "()Z",                      (void *) IjkMediaPlayer_stopRecord },
+
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)

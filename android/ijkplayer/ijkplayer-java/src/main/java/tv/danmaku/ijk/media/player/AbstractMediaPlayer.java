@@ -29,6 +29,7 @@ public abstract class AbstractMediaPlayer implements IMediaPlayer {
     private OnErrorListener mOnErrorListener;
     private OnInfoListener mOnInfoListener;
     private OnTimedTextListener mOnTimedTextListener;
+    private OnRecordListener mOnRecordListener;
 
     public final void setOnPreparedListener(OnPreparedListener listener) {
         mOnPreparedListener = listener;
@@ -64,6 +65,10 @@ public abstract class AbstractMediaPlayer implements IMediaPlayer {
         mOnTimedTextListener = listener;
     }
 
+    public final void setOnRecordListener(OnRecordListener listener) {
+        mOnRecordListener = listener;
+    }
+
     public void resetListeners() {
         mOnPreparedListener = null;
         mOnBufferingUpdateListener = null;
@@ -73,6 +78,7 @@ public abstract class AbstractMediaPlayer implements IMediaPlayer {
         mOnErrorListener = null;
         mOnInfoListener = null;
         mOnTimedTextListener = null;
+        mOnRecordListener = null;
     }
 
     protected final void notifyOnPrepared() {
@@ -113,6 +119,10 @@ public abstract class AbstractMediaPlayer implements IMediaPlayer {
     protected final void notifyOnTimedText(IjkTimedText text) {
         if (mOnTimedTextListener != null)
             mOnTimedTextListener.onTimedText(this, text);
+    }
+
+    protected final boolean notifyOnRecord(int what, int extra) {
+        return mOnRecordListener != null && mOnRecordListener.onRecord(this, what, extra);
     }
 
     public void setDataSource(IMediaDataSource mediaDataSource) {
