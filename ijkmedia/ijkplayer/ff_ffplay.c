@@ -3709,6 +3709,7 @@ static int read_thread(void *arg)
                             av_log(NULL, AV_LOG_INFO, "record start");
                             ffp_notify_msg1(ffp, FFP_MSG_RECORD_START);
                         } else {
+                            is->recording = 0;
                             av_log(NULL, AV_LOG_ERROR, "record init output context fail");
                             ffp_notify_msg2(ffp, FFP_MSG_RECORD_ERROR, -1);
                         }
