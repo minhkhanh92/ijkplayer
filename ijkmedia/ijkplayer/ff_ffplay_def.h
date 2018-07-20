@@ -429,6 +429,10 @@ typedef struct VideoState {
     int stop_record_req;
     char *record_filename;
     AVFormatContext *oc;
+
+    int64_t* first_pts;
+    int64_t* first_dts;
+    int record_has_key_frame;
 } VideoState;
 
 /* options specified by the user */

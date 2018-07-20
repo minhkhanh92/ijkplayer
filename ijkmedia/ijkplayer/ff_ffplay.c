@@ -3083,6 +3083,8 @@ static int init_record(VideoState *is) {
 
     ofmt = ofmt_ctx->oformat;
 
+    is->first_pts = (int64_t*) malloc(sizeof(int64_t) * ifmt_ctx->nb_streams);
+    is->first_dts = (int64_t*) malloc(sizeof(int64_t) * ifmt_ctx->nb_streams);
     for (i = 0; i < ifmt_ctx->nb_streams; i++) {
         AVStream *in_stream = ifmt_ctx->streams[i];
         AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
@@ -3100,6 +3102,12 @@ static int init_record(VideoState *is) {
         out_stream->codec->codec_tag = 0;
         if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
             out_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+        out_stream->start_time = in_stream->start_time;
+        out_stream->time_base = in_stream->time_base;
+
+        is->first_pts[i] = -1;
+        is->first_dts[i] = -1;
     }
     av_dump_format(ofmt_ctx, 0, is->record_filename, 1);
 
@@ -3124,6 +3132,11 @@ end:
             avio_closep(&ofmt_ctx->pb);
         avformat_free_context(ofmt_ctx);
 
+        if (is->first_pts) {
+            free(is->first_pts);
+            free(is->first_dts);
+        }
+
         av_log(NULL, AV_LOG_ERROR, "Error occurred: %s\n", av_err2str(ret));
         return -1;
     }
@@ -3132,23 +3145,24 @@ end:
     return 1;
 }
 
-static int record_stream(VideoState *is, AVPacket *pkt) {
+static int record_packet(VideoState *is, AVPacket *pkt) {
     AVPacket *copyPkt = av_packet_clone(pkt);
 
-    AVStream *in_stream, *out_stream;
-    in_stream  = is->ic->streams[pkt->stream_index];
-    out_stream = is->oc->streams[pkt->stream_index];
+    if (is->first_pts[pkt->stream_index] < 0) {
+        is->first_pts[pkt->stream_index] = pkt->pts;
+    }
+    if (is->first_dts[pkt->stream_index] < 0) {
+        is->first_dts[pkt->stream_index] = pkt->dts;
+    }
 
-    /* copy packet */
-    copyPkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
-    copyPkt->dts = av_rescale_q_rnd(pkt->dts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
-    copyPkt->duration = av_rescale_q(pkt->duration, in_stream->time_base, out_stream->time_base);
+    copyPkt->pts = pkt->pts - is->first_pts[pkt->stream_index];
+    copyPkt->dts = pkt->dts - is->first_dts[pkt->stream_index];
     copyPkt->pos = -1;
 
     int ret = av_interleaved_write_frame(is->oc, copyPkt);
     av_packet_free(&copyPkt);
 
-    av_log(NULL, AV_LOG_WARNING, "write packet ok = %d\n", ret);
+    av_log(NULL, AV_LOG_INFO, "record write packet ok = %d\n", ret);
 
     return ret;
 }
@@ -3687,6 +3701,11 @@ static int read_thread(void *arg)
                     is->recording = 0;
                     is->stop_record_req = 0;
 
+                    if (is->first_pts) {
+                        free(is->first_pts);
+                        free(is->first_dts);
+                    }
+
                     if (is->oc) {
                         av_write_trailer(is->oc);
                         // close output
@@ -3713,10 +3732,15 @@ static int read_thread(void *arg)
                             av_log(NULL, AV_LOG_ERROR, "record init output context fail");
                             ffp_notify_msg2(ffp, FFP_MSG_RECORD_ERROR, -1);
                         }
+                        is->record_has_key_frame = 0;
                     }
 
                     if (ret >= 0) {
-                        record_stream(is, pkt);
+                        if (is->record_has_key_frame) {
+                            record_packet(is, pkt);
+                        } else if (pkt->flags & AV_PKT_FLAG_KEY) {
+                            is->record_has_key_frame = 1;
+                        }
                     }
                 }
             }
@@ -3802,6 +3826,11 @@ static int read_thread(void *arg)
         }
         avformat_free_context(is->oc);
         is->oc = NULL;
+
+        if (is->first_pts) {
+            free(is->first_pts);
+            free(is->first_dts);
+        }
     }
 
     SDL_DestroyMutex(wait_mutex);
