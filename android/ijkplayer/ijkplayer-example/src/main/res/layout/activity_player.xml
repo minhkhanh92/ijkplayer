@@ -47,11 +47,23 @@
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             tools:context=".toolbar_widget" />
 
-        <Button
-            android:id="@+id/btnRecord"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Record"/>
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btnRecord"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Record"/>
+
+            <Button
+                android:id="@+id/btnTakeSnapshot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Take Snapshot"/>
+        </LinearLayout>
     </FrameLayout>
 
     <!-- The navigation drawer -->

@@ -20,10 +20,13 @@ package tv.danmaku.ijk.media.example.activities;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
@@ -40,6 +43,12 @@ import android.widget.Button;
 import android.widget.QuickContactBadge;
 import android.widget.TableLayout;
 import android.widget.TextView;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -179,8 +188,12 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
                 if (isRecording) {
                     mVideoView.stopRecord();
                 } else {
-                    String path  = getExternalFilesDir(null).getAbsolutePath() +
-                            String.format("/video_%s.mp4", System.currentTimeMillis());
+                    File file = new File(Environment.getExternalStorageDirectory(),
+                            String.format("Record/video_%s.mp4", System.currentTimeMillis()));
+                    if (!file.getParentFile().exists()) {
+                        file.getParentFile().mkdirs();
+                    }
+                    String path = file.getAbsolutePath();
                     isRecording = mVideoView.startRecord(path);
                     Log.i("record", "start record ok = " + isRecording);
                 }
@@ -205,6 +218,59 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
                 return false;
             }
         });
+
+        findViewById(R.id.btnTakeSnapshot).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+                        Bitmap bitmap = mVideoView.takeSnapshot();
+                        if (bitmap != null) {
+                            String title = String.format("%s at %s", "screenshot",
+                                    dateToString(new Date(), "HH_mm MMM_dd_yyyy"));
+                            String url = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, title, "");
+                            Log.i("take snapshot", "url: " + url);
+                        }
+//                    }
+//                }).start();
+//                Bitmap bitmap = mVideoView.takeSnapshot();
+//                if (bitmap != null) {
+//                    String title = String.format("%s at %s", "screenshot",
+//                            dateToString(new Date(), "HH_mm MMM_dd_yyyy"));
+//                    String url = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, title, "");
+//                    Log.i("take snapshot", "url: " + url);
+
+
+//                    FileOutputStream out = null;
+//                    try {
+//                        File file = new File(Environment.getExternalStorageDirectory(),
+//                                String.format("Record/screenshot_%s.png", System.currentTimeMillis()));
+//                        out = new FileOutputStream(file);
+//                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+//                        bitmap.recycle();
+//                        Log.i("take snapshot", "ok");
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    } finally {
+//                        try {
+//                            if (out != null) {
+//                                out.close();
+//                            }
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                } else {
+//                    Log.i("take snapshot", "not ok");
+//                }
+            }
+        });
+    }
+
+    private String dateToString(Date date, String pattern) {
+        SimpleDateFormat format = new SimpleDateFormat(pattern);
+        return format.format(date);
     }
 
     @Override

@@ -21,6 +21,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -218,6 +219,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
     }
 
     public void setRender(int render) {
+        render = RENDER_TEXTURE_VIEW;
         switch (render) {
             case RENDER_NONE:
                 setRenderView(null);
@@ -955,9 +957,11 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
             mAllRenders.add(RENDER_TEXTURE_VIEW);
         if (mSettings.getEnableNoView())
             mAllRenders.add(RENDER_NONE);
-
         if (mAllRenders.isEmpty())
             mAllRenders.add(RENDER_SURFACE_VIEW);
+
+
+
         mCurrentRender = mAllRenders.get(mCurrentRenderIndex);
         setRender(mCurrentRender);
     }
@@ -1084,7 +1088,9 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "rtsp_transport", "tcp");
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 0);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 0);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 0);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", IjkMediaPlayer.SDL_FCC_RV32);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
@@ -1099,11 +1105,11 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "flush_packets", 1);
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "sync", "ext");
 
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "fflags", "nobuffer");
+                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "fflags", "nobuffer");
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "max_delay", 0);
 
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-increase-speed", 1000);
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-skip-frames", 2000);
+                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-increase-speed", 1000);
+                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-skip-frames", 2000);
 
                     ijkMediaPlayer.setSpeed(1f);
                 }
@@ -1295,16 +1301,24 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
     }
 
     public boolean startRecord(String path) {
-        if (mMediaPlayer != null && mMediaPlayer instanceof IjkMediaPlayer) {
-            return ((IjkMediaPlayer) mMediaPlayer).startRecord(path);
-        }
-        return false;
+        return mMediaPlayer instanceof IjkMediaPlayer && ((IjkMediaPlayer) mMediaPlayer).startRecord(path);
     }
 
     public boolean stopRecord() {
-        if (mMediaPlayer != null && mMediaPlayer instanceof IjkMediaPlayer) {
-            return ((IjkMediaPlayer) mMediaPlayer).stopRecord();
+        return mMediaPlayer instanceof IjkMediaPlayer && ((IjkMediaPlayer) mMediaPlayer).stopRecord();
+    }
+
+    public Bitmap takeSnapshot() {
+        if (mMediaPlayer instanceof IjkMediaPlayer) {
+//            Bitmap bmp = Bitmap.createBitmap(mVideoWidth, mVideoHeight, Bitmap.Config.ARGB_8888);
+//            if (((IjkMediaPlayer) mMediaPlayer).takeSnapshot(bmp)) {
+//                return bmp;
+//            }
+//            bmp.recycle();
+            if (mRenderView instanceof TextureRenderView) {
+                return ((TextureRenderView) mRenderView).getBitmap(mVideoWidth, mVideoHeight);
+            }
         }
-        return false;
+        return null;
     }
 }

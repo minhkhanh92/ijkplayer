@@ -841,3 +841,19 @@ int ijkmp_stop_record(IjkMediaPlayer *mp) {
     MPTRACE("ijkmp_stop_record()=%d\n", retval);
     return retval;
 }
+
+static int ijkmp_take_snapshot_l(IjkMediaPlayer *mp, uint8_t *frame_buf)
+{
+    return ffp_take_snapshot(mp->ffplayer, frame_buf);
+}
+
+int ijkmp_take_snapshot(IjkMediaPlayer *mp, uint8_t *frame_buf)
+{
+    assert(mp);
+    MPTRACE("ijkmp_take_snapshot()\n");
+    pthread_mutex_lock(&mp->mutex);
+    int retval = ijkmp_take_snapshot_l(mp, frame_buf);
+    pthread_mutex_unlock(&mp->mutex);
+    MPTRACE("ijkmp_take_snapshot()=%d\n", retval);
+    return retval;
+}

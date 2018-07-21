@@ -5281,3 +5281,28 @@ int ffp_stop_record(FFPlayer *ffp) {
 
     return 1;
 }
+
+int ffp_take_snapshot(FFPlayer *ffp, uint8_t *frame_buf)
+{
+    if (!ffp || !ffp->is)
+        return 0;
+
+	VideoState *is = ffp->is;
+	Frame *vp;
+	int i = 0, linesize = 0, pixels = 0;
+	uint8_t *src;
+
+	vp = &is->pictq.queue[is->pictq.rindex];
+	int height = vp->bmp->h;
+	int width = vp->bmp->w;
+
+	// copy data to bitmap in java code
+	linesize = vp->bmp->pitches[0];
+	src = vp->bmp->pixels[0];
+	pixels = width * 4;
+	for (i = 0; i < height; i++) {
+		memcpy(frame_buf + i * pixels, src + i * linesize, pixels);
+	}
+
+    return 1;
+}
