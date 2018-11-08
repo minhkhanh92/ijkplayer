@@ -2924,6 +2924,10 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         channel_layout = avctx->channel_layout;
 #endif
 
+        if (ffp->audio_channel_number > 0) {
+            nb_channels = ffp->audio_channel_number;
+        }
+
         /* prepare audio output */
         if ((ret = audio_open(ffp, channel_layout, nb_channels, sample_rate, &is->audio_tgt)) < 0)
             goto fail;
@@ -4380,6 +4384,12 @@ void ffp_set_option_int(FFPlayer *ffp, int opt_category, const char *name, int64
         if (!strcmp(name, FFP_PROP_STRING_MAX_CACHE_DURATION_TO_SKIP_FRAMES)) {
             ffp->max_cache_duration_to_skip_frames = (int) value;
             av_log(ffp, AV_LOG_INFO, "FFP_PROP_STRING_MAX_CACHE_DURATION_TO_SKIP_FRAMES, %lld", value);
+            return;
+        }
+
+        if (!strcmp(name, FFP_PROP_STRING_AUDIO_CHANNEL_NUMBER)) {
+            ffp->audio_channel_number = (int) value;
+            av_log(ffp, AV_LOG_INFO, "FFP_PROP_STRING_AUDIO_CHANNEL_NUMBER, %lld", value);
             return;
         }
     }

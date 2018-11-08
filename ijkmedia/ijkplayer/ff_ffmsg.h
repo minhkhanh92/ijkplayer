@@ -112,5 +112,6 @@
 
 #define FFP_PROP_STRING_MAX_CACHE_DURATION_TO_INCREASE_SPEED   "max-cache-duration-to-increase-speed"
 #define FFP_PROP_STRING_MAX_CACHE_DURATION_TO_SKIP_FRAMES      "max-cache-duration-to-skip-frames"
+#define FFP_PROP_STRING_AUDIO_CHANNEL_NUMBER                   "audio-channel-number"
 
 #endif

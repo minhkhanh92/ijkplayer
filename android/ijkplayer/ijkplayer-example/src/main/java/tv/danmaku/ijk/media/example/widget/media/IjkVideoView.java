@@ -63,6 +63,9 @@ import tv.danmaku.ijk.media.example.application.Settings;
 import tv.danmaku.ijk.media.example.services.MediaPlayerService;
 
 public class IjkVideoView extends FrameLayout implements MediaController.MediaPlayerControl {
+    private static int playerCount = 0;
+    private static List<IjkMediaPlayer> players = new ArrayList<>();
+
     private String TAG = "IjkVideoView";
     // settable by the client
     private Uri mUri;
@@ -290,6 +293,9 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
     public void stopPlayback() {
         if (mMediaPlayer != null) {
+            players.remove(mMediaPlayer);
+            playerCount--;
+
             mMediaPlayer.stop();
             mMediaPlayer.release();
             mMediaPlayer = null;
@@ -317,6 +323,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
         try {
             mMediaPlayer = createPlayer(mSettings.getPlayer());
+            playerCount++;
 
             // TODO: create SubtitleController in MediaPlayer, but we need
             // a context for the subtitle renderers
@@ -728,6 +735,9 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
      */
     public void release(boolean cleartargetstate) {
         if (mMediaPlayer != null) {
+            players.remove(mMediaPlayer);
+            playerCount--;
+
             mMediaPlayer.reset();
             mMediaPlayer.release();
             mMediaPlayer = null;
@@ -1027,6 +1037,8 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
     public IMediaPlayer createPlayer(int playerType) {
         IMediaPlayer mediaPlayer = null;
 
+        //playerType = Settings.PV_PLAYER__IjkExoMediaPlayer;
+
         switch (playerType) {
             case Settings.PV_PLAYER__IjkExoMediaPlayer: {
                 IjkExoMediaPlayer IjkExoMediaPlayer = new IjkExoMediaPlayer(mAppContext);
@@ -1084,13 +1096,13 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "rtsp_transport", "tcp");
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 0);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", IjkMediaPlayer.SDL_FCC_RV32);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024 * 400);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 0);
+                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 0);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0);
                     //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "probesize", "64000");
                     //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec_mpeg4", 1);
@@ -1102,10 +1114,17 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "fflags", "nobuffer");
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "max_delay", 0);
 
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-increase-speed", 1000);
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-skip-frames", 2000);
+                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-increase-speed", 1000);
+                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-skip-frames", 2000);
 
-                    ijkMediaPlayer.setSpeed(1f);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "audio-channel-number", 2);
+
+                    //ijkMediaPlayer.setSpeed(1f);
+                    //ijkMediaPlayer.setPlaybackVolume(0.5f);
+                    //if (playerCount > 1) {
+                        //ijkMediaPlayer.setVolume(0.9f, 0.9f);
+                    //}
+                    players.add(ijkMediaPlayer);
                 }
                 mediaPlayer = ijkMediaPlayer;
             }
@@ -1306,5 +1325,11 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
             return ((IjkMediaPlayer) mMediaPlayer).stopRecord();
         }
         return false;
+    }
+
+    public static void setVolume(float volume) {
+        for (IjkMediaPlayer player : players) {
+            player.setVolume(volume, volume);
+        }
     }
 }
