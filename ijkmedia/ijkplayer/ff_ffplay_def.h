@@ -738,6 +738,7 @@ typedef struct FFPlayer {
 
     int max_cache_duration_to_increase_speed;
     int max_cache_duration_to_skip_frames;
+    int audio_channel_number;
 } FFPlayer;
 
 #define fftime_to_milliseconds(ts) (av_rescale(ts, 1000, AV_TIME_BASE))
