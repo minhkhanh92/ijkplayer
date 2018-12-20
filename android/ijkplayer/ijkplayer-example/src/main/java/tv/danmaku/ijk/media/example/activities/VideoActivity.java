@@ -24,6 +24,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
@@ -40,6 +41,8 @@ import android.widget.Button;
 import android.widget.QuickContactBadge;
 import android.widget.TableLayout;
 import android.widget.TextView;
+
+import java.io.File;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -81,7 +84,7 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
     public static void intentTo(Context context, String videoPath, String videoTitle) {
         //videoPath = "rtsp://staging-stream.veriksystems.com:443/live-test/test";
         //videoPath = "rtsp://stream.veriksystems.com:443/live/19d213511b0e48b49e1c1ce0b8cfc8e6?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=3lGIAvllVJwVCCWNoN7mQBHvqO1XWa1LE33btWEDBF8fYxALe8s0QaG7it7Bj16P&hubUUID=db7c1028655f40309e8559087477b4dc";
-        videoPath = "rtsp://stream.veriksystems.com:443/live/19d213511b0e48b49e1c1ce0b8cfc8e6?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=vHUNMR3cjf0wa7D1AAo0MwQYpUZf0yw6Qdtv0YIv8UGCRHkYtrVQIwlkuKIZGBVi&hubUUID=db7c1028655f40309e8559087477b4dc";
+        videoPath = "rtsp://stream.zinnoinc.com:443/live/18f20d4c-b270-42e5-a182-754d4b4a7cb3?token=eyJyb2xlIjoidXNlciIsInVzZXJJZCI6ImM4OGZmZDEwNTQyNjQyOTY4NDZjYTExZTk3MTIyMWE2IiwidG9rZW4iOiJHZlRudmVOb0ZlOU91ajd4MEdxbTNlV1FjdEQwa0Y3T1k0TjJnM3BaT2c1T0R4UlhSM25RdWdMbUVxNFZqQzE1IiwiZGV2aWNlSWQiOiI2ZTAyYzc3NTU0YjI0YjljYmQ1Yjg3NmQ5YzY4ZmJiNCJ9";
         //videoPath = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov";
         context.startActivity(newIntent(context, videoPath, videoTitle));
     }
@@ -95,7 +98,9 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
 
         // handle arguments
         //mVideoPath = "rtsp://stream.veriksystems.com:1935/live/c3f34db4d3bc47ca949087cfbe3de4b5?role=user&userUUID=0f8acc70125c4c779ee289b4222fc51b&token=vHUNMR3cjf0wa7D1AAo0MwQYpUZf0yw6Qdtv0YIv8UGCRHkYtrVQIwlkuKIZGBVi&hubUUID=db7c1028655f40309e8559087477b4dc";
-        mVideoPath = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov";
+        //mVideoPath = "rtsp://stream.zinnoinc.com:443/live/18f20d4c-b270-42e5-a182-754d4b4a7cb3?token=eyJyb2xlIjoidXNlciIsInVzZXJJZCI6ImM4OGZmZDEwNTQyNjQyOTY4NDZjYTExZTk3MTIyMWE2IiwidG9rZW4iOiJHZlRudmVOb0ZlOU91ajd4MEdxbTNlV1FjdEQwa0Y3T1k0TjJnM3BaT2c1T0R4UlhSM25RdWdMbUVxNFZqQzE1IiwiZGV2aWNlSWQiOiI2ZTAyYzc3NTU0YjI0YjljYmQ1Yjg3NmQ5YzY4ZmJiNCJ9";
+        //mVideoPath = new File(Environment.getExternalStorageDirectory() + "/test/test.mp4").getPath();
+        mVideoPath = "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4";
 
         Intent intent = getIntent();
         String intentAction = intent.getAction();

@@ -3191,6 +3191,7 @@ static int read_thread(void *arg)
     int64_t prev_io_tick_counter = 0;
     int64_t io_tick_counter = 0;
     int init_ijkmeta = 0;
+    int error_count = 0;
 
     if (!wait_mutex) {
         av_log(NULL, AV_LOG_FATAL, "SDL_CreateMutex(): %s\n", SDL_GetError());
@@ -3630,16 +3631,25 @@ static int read_thread(void *arg)
                     if (!is->abort_request)
                         continue;
                 } else {
-                    completed = 1;
-                    ffp->auto_resume = 0;
-
                     // TODO: 0 it's a bit early to notify complete here
-                    ffp_toggle_buffering(ffp, 0);
-                    toggle_pause(ffp, 1);
                     if (ffp->error) {
+                        completed = 1;
+                        ffp->auto_resume = 0;
+
+                        ffp_toggle_buffering(ffp, 0);
+                        toggle_pause(ffp, 1);
+
                         av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: error: %d\n", ffp->error);
                         ffp_notify_msg1(ffp, FFP_MSG_ERROR);
+                    } if (is->realtime) {
+                        av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: continue wait\n");
                     } else {
+                        completed = 1;
+                        ffp->auto_resume = 0;
+
+                        ffp_toggle_buffering(ffp, 0);
+                        toggle_pause(ffp, 1);
+
                         av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: completed: OK\n");
                         ffp_notify_msg1(ffp, FFP_MSG_COMPLETED);
                     }
@@ -3649,9 +3659,13 @@ static int read_thread(void *arg)
         pkt->flags = 0;
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
+            av_log(ffp, AV_LOG_INFO, "av_read_frame: failed ret=%d\n", ret);
+
             int pb_eof = 0;
             int pb_error = 0;
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !is->eof) {
+                av_log(ffp, AV_LOG_INFO, "av_read_frame: failed AVERROR_EOF\n");
+
                 ffp_check_buffering_l(ffp);
                 pb_eof = 1;
                 // check error later
@@ -3663,9 +3677,11 @@ static int read_thread(void *arg)
             if (ret == AVERROR_EXIT) {
                 pb_eof = 1;
                 pb_error = AVERROR_EXIT;
+                av_log(ffp, AV_LOG_INFO, "av_read_frame: failed AVERROR_EXIT\n");
             }
 
             if (pb_eof) {
+                av_log(ffp, AV_LOG_INFO, "av_read_frame: failed pb_eof\n");
                 if (is->video_stream >= 0)
                     packet_queue_put_nullpacket(&is->videoq, is->video_stream);
                 if (is->audio_stream >= 0)
@@ -3675,6 +3691,7 @@ static int read_thread(void *arg)
                 is->eof = 1;
             }
             if (pb_error) {
+                av_log(ffp, AV_LOG_INFO, "av_read_frame: failed pb_error\n");
                 if (is->video_stream >= 0)
                     packet_queue_put_nullpacket(&is->videoq, is->video_stream);
                 if (is->audio_stream >= 0)
@@ -3689,8 +3706,41 @@ static int read_thread(void *arg)
                 ffp->error = 0;
             }
             if (is->eof) {
-                ffp_toggle_buffering(ffp, 0);
-                SDL_Delay(100);
+                av_log(ffp, AV_LOG_INFO, "av_read_frame: failed is->eof\n");
+
+                if (is->realtime) {
+                    if (ic && !is->ic)
+                        avformat_close_input(&ic);
+                    ic = avformat_alloc_context();
+                    if (!ic) {
+                        last_error = -1;
+                        av_log(NULL, AV_LOG_FATAL, "Could not allocate context.\n");
+                        ret = AVERROR(ENOMEM);
+                        goto fail;
+                    }
+                    ic->interrupt_callback.callback = decode_interrupt_cb;
+                    ic->interrupt_callback.opaque = is;
+                    error_count = 0;
+                    do {
+                        av_log(ffp, AV_LOG_INFO, "av_read_frame: open new input %d\n", error_count);
+                        err = avformat_open_input(&ic, is->filename, is->iformat, &ffp->format_opts);
+                        if (err < 0) {
+                            error_count++;
+                            SDL_Delay(1000);
+                        }
+                    } while (err < 0 && error_count < 3);
+
+                    if (err < 0) {
+                        last_error = -2;
+                        print_error(is->filename, err);
+                        ret = -1;
+                        goto fail;
+                    }
+                    is->ic = ic;
+                } else {
+                    ffp_toggle_buffering(ffp, 0);
+                    SDL_Delay(100);
+                }
             }
             SDL_LockMutex(wait_mutex);
             SDL_CondWaitTimeout(is->continue_read_thread, wait_mutex, 10);
