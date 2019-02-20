@@ -99,11 +99,11 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void startVideo1() {
-        //videoView1.setVideoPath("rtsp://stream.veriksystems.com:443/live/89ffdbc423274f1993037d3d581e999d?role=user&userUUID=4c845cf472ba409fae08f09fb1fb200d&token=cK2hnRANpmFZ2IBTlHFL0Qz0sHgw2PGyUFQbEUbaBJm7jB3RMJqgMyAWw2VnDp1o&hubUUID=2c3fe4191a894aa485f73f7971e4c460");
+        videoView1.setVideoPath("rtsp://staging-1-stream.zinnoinc.com:443/live/628beb08-e0a5-4ae9-90c2-f90817e5ce0a?token=eyJyb2xlIjoidXNlciIsInVzZXJJZCI6Ijg3Yzk2ZjQyNTVmMDQyNjVhMmVmNzRkMDQ5OTE3YTg5IiwidG9rZW4iOiJlQmZ0MFNJWHE1NXFwN0VXREYwVWVBcTREZ0xEaUh1a0xWRTNnalljZEU5ODZqWjZaZHRjVGRZanZtQlRVZWxwIiwiZGV2aWNlSWQiOiIwMTBiMzE3Mjk2OWI0MTM3ODMwYzI2MGExNzhlYTM3MSJ9");
         //videoView1.setVideoPath("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov");
 
-        File video = new File(Environment.getExternalStorageDirectory() + "/test/test.mp4");
-        videoView1.setVideoPath(video.getPath());
+        File video = new File(Environment.getExternalStorageDirectory() + "/test/test1.mp4");
+        //videoView1.setVideoPath(video.getPath());
 
         videoView1.start();
         btnStart1.setText("Stop");
@@ -115,14 +115,16 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void startVideo2() {
+        videoView2.setVideoPath("rtsp://staging-1-stream.zinnoinc.com:443/live/628beb08-e0a5-4ae9-90c2-f90817e5ce0a?token=eyJyb2xlIjoidXNlciIsInVzZXJJZCI6Ijg3Yzk2ZjQyNTVmMDQyNjVhMmVmNzRkMDQ5OTE3YTg5IiwidG9rZW4iOiJlQmZ0MFNJWHE1NXFwN0VXREYwVWVBcTREZ0xEaUh1a0xWRTNnalljZEU5ODZqWjZaZHRjVGRZanZtQlRVZWxwIiwiZGV2aWNlSWQiOiIwMTBiMzE3Mjk2OWI0MTM3ODMwYzI2MGExNzhlYTM3MSJ9");
+
         //videoView2.setVideoPath("rtsp://stream.veriksystems.com:443/live/91fcbd08bdb34e5bad2d28a3fc4f430e?role=user&userUUID=4c845cf472ba409fae08f09fb1fb200d&token=cK2hnRANpmFZ2IBTlHFL0Qz0sHgw2PGyUFQbEUbaBJm7jB3RMJqgMyAWw2VnDp1o&hubUUID=2c3fe4191a894aa485f73f7971e4c460");
         //videoView2.setVideoPath("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov");
 
         //String fileName = "android.resource://"+  getPackageName() + "/raw/test1";
         //videoView2.setVideoURI(Uri.parse(fileName));
 
-        File video = new File(Environment.getExternalStorageDirectory() + "/test/test.mp4");
-        videoView2.setVideoPath(video.getPath());
+//        File video = new File(Environment.getExternalStorageDirectory() + "/test/test.mp4");
+//        videoView2.setVideoPath(video.getPath());
 
         videoView2.start();
         btnStart2.setText("Stop");
@@ -137,8 +139,10 @@ public class TestActivity extends AppCompatActivity {
         //videoView3.setVideoPath("rtsp://stream.veriksystems.com:443/live/91fcbd08bdb34e5bad2d28a3fc4f430e?role=user&userUUID=4c845cf472ba409fae08f09fb1fb200d&token=cK2hnRANpmFZ2IBTlHFL0Qz0sHgw2PGyUFQbEUbaBJm7jB3RMJqgMyAWw2VnDp1o&hubUUID=2c3fe4191a894aa485f73f7971e4c460");
         //videoView3.setVideoPath("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov");
 
-        File video = new File(Environment.getExternalStorageDirectory() + "/test/test.mp4");
-        videoView3.setVideoPath(video.getPath());
+        //File video = new File(Environment.getExternalStorageDirectory() + "/test/test.mp4");
+        //videoView3.setVideoPath(video.getPath());
+
+        videoView3.setVideoPath("rtsp://staging-1-stream.zinnoinc.com:443/live/628beb08-e0a5-4ae9-90c2-f90817e5ce0a?token=eyJyb2xlIjoidXNlciIsInVzZXJJZCI6Ijg3Yzk2ZjQyNTVmMDQyNjVhMmVmNzRkMDQ5OTE3YTg5IiwidG9rZW4iOiJlQmZ0MFNJWHE1NXFwN0VXREYwVWVBcTREZ0xEaUh1a0xWRTNnalljZEU5ODZqWjZaZHRjVGRZanZtQlRVZWxwIiwiZGV2aWNlSWQiOiIwMTBiMzE3Mjk2OWI0MTM3ODMwYzI2MGExNzhlYTM3MSJ9");
         videoView3.start();
         btnStart3.setText("Stop");    }
 

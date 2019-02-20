@@ -356,7 +356,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
             }
             bindSurfaceHolder(mMediaPlayer, mSurfaceHolder);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mMediaPlayer.setScreenOnWhilePlaying(true);
+            //mMediaPlayer.setScreenOnWhilePlaying(true);
             mPrepareStartTime = System.currentTimeMillis();
             mMediaPlayer.prepareAsync();
             if (mHudViewHolder != null)
@@ -959,12 +959,12 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
     private void initRenders() {
         mAllRenders.clear();
 
-        if (mSettings.getEnableSurfaceView())
-            mAllRenders.add(RENDER_SURFACE_VIEW);
-        if (mSettings.getEnableTextureView() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        //if (mSettings.getEnableSurfaceView())
+        //    mAllRenders.add(RENDER_SURFACE_VIEW);
+        //if (mSettings.getEnableTextureView() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
             mAllRenders.add(RENDER_TEXTURE_VIEW);
-        if (mSettings.getEnableNoView())
-            mAllRenders.add(RENDER_NONE);
+        //if (mSettings.getEnableNoView())
+        //    mAllRenders.add(RENDER_NONE);
 
         if (mAllRenders.isEmpty())
             mAllRenders.add(RENDER_SURFACE_VIEW);
@@ -1055,7 +1055,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                 IjkMediaPlayer ijkMediaPlayer = null;
                 if (mUri != null) {
                     ijkMediaPlayer = new IjkMediaPlayer();
-                    ijkMediaPlayer.native_setLogLevel(IjkMediaPlayer.IJK_LOG_VERBOSE);
+                    //ijkMediaPlayer.native_setLogLevel(IjkMediaPlayer.IJK_LOG_DEFAULT);
 
 //                    if (mSettings.getUsingMediaCodec()) {
 //                        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
@@ -1095,7 +1095,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
 
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "rtsp_transport", "tcp");
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", IjkMediaPlayer.SDL_FCC_RV32);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1);
@@ -1103,7 +1103,6 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024 * 400);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 0);
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0);
                     //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "probesize", "64000");
                     //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec_mpeg4", 1);
 
@@ -1112,8 +1111,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                     //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "sync", "ext");
 
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "fflags", "nobuffer");
-                    //ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "max_delay", 0);
-
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-increase-speed", 1000);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-cache-duration-to-skip-frames", 2000);
 
