@@ -89,6 +89,7 @@ typedef struct SDL_Vout_Opaque {
 
     ISDL_Array       overlay_manager;
     ISDL_Array       overlay_pool;
+    ISDL_Array       pending_output_buffers;
 
     IJK_EGL         *egl;
 } SDL_Vout_Opaque;
@@ -125,6 +126,14 @@ static void func_free_l(SDL_Vout *vout)
         }
         ISDL_Array__clear(&opaque->overlay_pool);
         ISDL_Array__clear(&opaque->overlay_manager);
+
+        // clear pending output buffers
+        SDL_AMediaCodecBufferProxy **begin1 = (SDL_AMediaCodecBufferProxy **)ISDL_Array__begin(&opaque->pending_output_buffers);
+        SDL_AMediaCodecBufferProxy **end1   = (SDL_AMediaCodecBufferProxy **)ISDL_Array__end(&opaque->pending_output_buffers);
+        for (; begin1 < end1; ++begin) {
+            SDL_AMediaCodecBufferProxy_destroyP(begin1);
+        }
+        ISDL_Array__clear(&opaque->pending_output_buffers);
 
         if (opaque->native_window) {
             ANativeWindow_release(opaque->native_window);
@@ -217,6 +226,8 @@ SDL_Vout *SDL_VoutAndroid_CreateForANativeWindow()
         goto fail;
     if (ISDL_Array__init(&opaque->overlay_pool, 32))
         goto fail;
+    if (ISDL_Array__init(&opaque->pending_output_buffers, 32))
+        goto fail;
 
     opaque->egl = IJK_EGL_create();
     if (!opaque->egl)
@@ -233,6 +244,19 @@ fail:
     return NULL;
 }
 
+static void SDL_VoutAndroid_addPendingOutputBuffer_l(SDL_Vout *vout, SDL_AMediaCodecBufferProxy *proxy) {
+    if (proxy && proxy->buffer_index > -1) {
+        SDL_AMediaCodecBufferProxy *copiedProxy = (SDL_AMediaCodecBufferProxy *)mallocz(sizeof(SDL_AMediaCodecBufferProxy));
+        if (copiedProxy) {
+            SDL_AMediaCodecBufferProxy_init(copiedProxy);
+            copiedProxy->buffer_id = proxy->buffer_id;
+            copiedProxy->acodec_serial = proxy->acodec_serial;
+            copiedProxy->buffer_index = proxy->buffer_index;
+            ISDL_Array__push_back(&vout->opaque->pending_output_buffers, copiedProxy);
+        }
+    }
+}
+
 static void SDL_VoutAndroid_invalidateAllBuffers_l(SDL_Vout *vout)
 {
     AMCTRACE("%s\n", __func__);
@@ -241,6 +265,7 @@ static void SDL_VoutAndroid_invalidateAllBuffers_l(SDL_Vout *vout)
     SDL_AMediaCodecBufferProxy **begin = (SDL_AMediaCodecBufferProxy **)ISDL_Array__begin(&opaque->overlay_manager);
     SDL_AMediaCodecBufferProxy **end   = (SDL_AMediaCodecBufferProxy **)ISDL_Array__end(&opaque->overlay_manager);
     for (; begin < end; ++begin) {
+        SDL_VoutAndroid_addPendingOutputBuffer_l(vout, *begin);
         SDL_AMediaCodecBufferProxy_invalidate(*begin);
     }
 }
@@ -375,6 +400,8 @@ static int SDL_VoutAndroid_releaseBufferProxy_l(SDL_Vout *vout, SDL_AMediaCodecB
     ISDL_Array__push_back(&opaque->overlay_pool, proxy);
 
     if (!SDL_AMediaCodec_isSameSerial(opaque->acodec, proxy->acodec_serial)) {
+        SDL_VoutAndroid_addPendingOutputBuffer_l(vout, proxy);
+
         ALOGW("%s: [%d] ???????? proxy %d: vout: %d idx: %d render: %s fake: %s",
             __func__,
             proxy->buffer_id,
@@ -447,4 +474,17 @@ int SDL_VoutAndroid_releaseBufferProxyP_l(SDL_Vout *vout, SDL_AMediaCodecBufferP
     ret = SDL_VoutAndroid_releaseBufferProxy_l(vout, *proxy, render);
     *proxy = NULL;
     return ret;
+}
+
+void SDL_VoutAndroid_releasePendingBufferProxy(SDL_Vout *vout) {
+    AMCTRACE("%s\n", __func__);
+    SDL_Vout_Opaque *opaque = vout->opaque;
+
+    SDL_AMediaCodecBufferProxy **begin = (SDL_AMediaCodecBufferProxy **)ISDL_Array__begin(&opaque->pending_output_buffers);
+    SDL_AMediaCodecBufferProxy **end   = (SDL_AMediaCodecBufferProxy **)ISDL_Array__end(&opaque->pending_output_buffers);
+    for (; begin < end; ++begin) {
+        SDL_AMediaCodec_releaseOutputBuffer(opaque->acodec, (*begin)->buffer_index, true);
+        SDL_AMediaCodecBufferProxy_destroyP(begin);
+    }
+    ISDL_Array__clear(&opaque->pending_output_buffers);
 }

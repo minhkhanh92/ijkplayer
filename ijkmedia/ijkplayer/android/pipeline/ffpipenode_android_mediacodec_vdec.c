@@ -301,6 +301,17 @@ static int reconfigure_codec_l(JNIEnv *env, IJKFF_Pipenode *node, jobject new_su
     if (SDL_AMediaCodec_isConfigured(opaque->acodec)) {
         if (opaque->acodec) {
             if (SDL_AMediaCodec_isStarted(opaque->acodec)) {
+                if (opaque->jsurface != NULL && SDL_Android_GetApiLevel() >= IJK_API_23_M
+                    && SDL_AMediaCodec_set_output_surface(env, opaque->acodec, opaque->jsurface) == SDL_AMEDIA_OK) {
+                    SDL_VoutAndroid_setAMediaCodec(opaque->weak_vout, opaque->acodec);
+                    SDL_VoutAndroid_releasePendingBufferProxy(opaque->weak_vout);
+
+                    ALOGI("update surface OK, %s", opaque->acodec->opaque_class->name);
+                    return 0;
+                } else {
+                    ALOGE("update surface failed, %s", opaque->acodec->opaque_class->name);
+                }
+
                 SDL_VoutAndroid_invalidateAllBuffers(opaque->weak_vout);
                 SDL_AMediaCodec_stop(opaque->acodec);
             }
