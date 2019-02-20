@@ -498,7 +498,7 @@ static int feed_input_buffer2(JNIEnv *env, IJKFF_Pipenode *node, int64_t timeUs,
                 ret = -1;
                 goto fail;
             }
-            if (ffp_is_flush_packet(&pkt) || opaque->acodec_flush_request) {
+            if (/*ffp_is_flush_packet(&pkt) ||*/ opaque->acodec_flush_request) {
                 // request flush before lock, or never get mutex
                 opaque->acodec_flush_request = true;
                 if (SDL_AMediaCodec_isStarted(opaque->acodec)) {
@@ -743,7 +743,7 @@ static int feed_input_buffer(JNIEnv *env, IJKFF_Pipenode *node, int64_t timeUs, 
                 ret = -1;
                 goto fail;
             }
-            if (ffp_is_flush_packet(&pkt) || opaque->acodec_flush_request) {
+            if (/*ffp_is_flush_packet(&pkt) ||*/ opaque->acodec_flush_request) {
                 // request flush before lock, or never get mutex
                 opaque->acodec_flush_request = true;
                 SDL_LockMutex(opaque->acodec_mutex);

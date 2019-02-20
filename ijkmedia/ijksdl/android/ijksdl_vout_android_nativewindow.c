@@ -128,10 +128,10 @@ static void func_free_l(SDL_Vout *vout)
         ISDL_Array__clear(&opaque->overlay_manager);
 
         // clear pending output buffers
-        SDL_AMediaCodecBufferProxy **begin1 = (SDL_AMediaCodecBufferProxy **)ISDL_Array__begin(&opaque->pending_output_buffers);
-        SDL_AMediaCodecBufferProxy **end1   = (SDL_AMediaCodecBufferProxy **)ISDL_Array__end(&opaque->pending_output_buffers);
-        for (; begin1 < end1; ++begin) {
-            SDL_AMediaCodecBufferProxy_destroyP(begin1);
+        begin = (SDL_AMediaCodecBufferProxy **)ISDL_Array__begin(&opaque->pending_output_buffers);
+        end   = (SDL_AMediaCodecBufferProxy **)ISDL_Array__end(&opaque->pending_output_buffers);
+        for (; begin < end; ++begin) {
+            SDL_AMediaCodecBufferProxy_destroyP(begin);
         }
         ISDL_Array__clear(&opaque->pending_output_buffers);
 

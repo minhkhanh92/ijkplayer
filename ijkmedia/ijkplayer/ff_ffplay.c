@@ -3492,7 +3492,7 @@ static int read_thread(void *arg)
                 packet_queue_put(&is->subtitleq, &flush_pkt);
             }
             if (is->video_stream >= 0) {
-                if (ffp->node_vdec) {
+                if (ffp->node_vdec && ffp->stat.vdec_type != FFP_PROPV_DECODER_MEDIACODEC) {
                     ffpipenode_flush(ffp->node_vdec);
                 }
                 packet_queue_flush(&is->videoq);
