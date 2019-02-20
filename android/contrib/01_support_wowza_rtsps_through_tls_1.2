@@ -1,0 +1,19 @@
+Index: ffmpeg-3.2.9/libavformat/rtsp.c
+===================================================================
+--- ffmpeg-3.2.9.orig/libavformat/rtsp.c
++++ ffmpeg-3.2.9/libavformat/rtsp.c
+@@ -1701,8 +1701,13 @@ redirect:
+     if (*auth) {
+         av_strlcpy(rt->auth, auth, sizeof(rt->auth));
+     }
+-    if (port < 0)
++    if (port < 0) {
+         port = default_port;
++    }
++    else if (port == 443) { //Zinno fixed up for rtsp over SSL port
++        lower_rtsp_proto         = "tls";
++        rt->lower_transport_mask = 1 << RTSP_LOWER_TRANSPORT_TCP;
++    }
+ 
+     lower_transport_mask = rt->lower_transport_mask;
+ 
