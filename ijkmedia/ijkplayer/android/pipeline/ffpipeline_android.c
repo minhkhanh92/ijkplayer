@@ -226,10 +226,13 @@ int ffpipeline_set_surface(JNIEnv *env, IJKFF_Pipeline* pipeline, jobject surfac
             SDL_VoutAndroid_setAMediaCodec(opaque->weak_vout, NULL);
             if (surface) {
                 opaque->jsurface = (*env)->NewGlobalRef(env, surface);
+                opaque->is_surface_need_reconfigure = true;
             } else {
                 opaque->jsurface = NULL;
+                if (SDL_Android_GetApiLevel() < IJK_API_23_M || pipeline->opaque->ffp->stat.vdec_type != FFP_PROPV_DECODER_MEDIACODEC) {
+                    opaque->is_surface_need_reconfigure = true;
+                }
             }
-            opaque->is_surface_need_reconfigure = true;
 
             if (prev_surface != NULL) {
                 SDL_JNI_DeleteGlobalRefP(env, &prev_surface);

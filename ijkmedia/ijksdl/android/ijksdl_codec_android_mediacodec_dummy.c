@@ -62,6 +62,14 @@ static sdl_amedia_status_t SDL_AMediaCodecDummy_configure_surface(
     return SDL_AMEDIA_OK;
 }
 
+static sdl_amedia_status_t SDL_AMediaCodecDummy_set_output_surface(
+    JNIEnv*env,
+    SDL_AMediaCodec* acodec,
+    jobject android_surface)
+{
+    return SDL_AMEDIA_ERROR_BASE;
+}
+
 static sdl_amedia_status_t SDL_AMediaCodecDummy_start(SDL_AMediaCodec* acodec)
 {
     acodec->opaque->request_stop = false;
@@ -130,6 +138,7 @@ SDL_AMediaCodec* SDL_AMediaCodecDummy_create()
     acodec->func_delete                 = SDL_AMediaCodecDummy_delete;
     acodec->func_configure              = NULL;
     acodec->func_configure_surface      = SDL_AMediaCodecDummy_configure_surface;
+    acodec->func_set_output_surface     = SDL_AMediaCodecDummy_set_output_surface;
 
     acodec->func_start                  = SDL_AMediaCodecDummy_start;
     acodec->func_stop                   = SDL_AMediaCodecDummy_stop;

@@ -36,6 +36,7 @@ void SDL_VoutAndroid_SetNativeWindow(SDL_Vout *vout, ANativeWindow *native_windo
 void             SDL_VoutAndroid_setAMediaCodec(SDL_Vout *vout, SDL_AMediaCodec *acodec);
 SDL_AMediaCodec *SDL_VoutAndroid_peekAMediaCodec(SDL_Vout *vout);
 void             SDL_VoutAndroid_invalidateAllBuffers(SDL_Vout *vout);
+void             SDL_VoutAndroid_releasePendingBufferProxy(SDL_Vout *vout);
 
 /*
  * MediaCodec buffer proxy
